@@ -24,7 +24,9 @@ const avatar = ref(userInfo.value.avatar ?? '')
 
 const name = ref(userInfo.value.name ?? '')
 
-const description = ref(userInfo.value.description ?? '')
+const countsFree = ref(userInfo.value.countsFree ?? 0)
+
+const countsPaid = ref(userInfo.value.countsPaid ?? 0)
 
 const language = computed({
   get() {
@@ -141,7 +143,8 @@ function handleImportButtonClick(): void {
           {{ $t('common.save') }}
         </NButton>
       </div>
-      <div class="flex items-center space-x-4">
+      <!-- 描述 -->
+      <!-- <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[100px]">{{ $t('setting.description') }}</span>
         <div class="flex-1">
           <NInput v-model:value="description" placeholder="" />
@@ -149,6 +152,18 @@ function handleImportButtonClick(): void {
         <NButton size="tiny" text type="primary" @click="updateUserInfo({ description })">
           {{ $t('common.save') }}
         </NButton>
+      </div> -->
+      <div class="flex items-center space-x-4">
+        <span class="flex-shrink-0 w-[100px]">{{ $t('user.countsFree') }}</span>
+        <div class="flex-1">
+          <NInput v-model:value="countsFree" placeholder="" disabled />
+        </div>
+      </div>
+      <div class="flex items-center space-x-4">
+        <span class="flex-shrink-0 w-[100px]">{{ $t('user.countsPaid') }}</span>
+        <div class="flex-1">
+          <NInput v-model:value="countsPaid" placeholder="" disabled />
+        </div>
       </div>
       <div
         class="flex items-center space-x-4"

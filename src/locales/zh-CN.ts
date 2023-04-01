@@ -88,4 +88,8 @@ export default {
     onlineImportWarning: '注意：请检查 JSON 文件来源！',
     downloadError: '请检查网络状态与 JSON 文件有效性',
   },
+  user: {
+    countsPaid: '永久有效次数',
+    countsFree: '今日免费次数',
+  },
 }

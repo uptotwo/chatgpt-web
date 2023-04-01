@@ -27,13 +27,14 @@ const userInfo = computed(() => userStore.userInfo)
     </div>
     <div class="flex-1 min-w-0 ml-2">
       <h2 class="overflow-hidden font-bold text-md text-ellipsis whitespace-nowrap">
-        {{ userInfo.name ?? 'ChenZhaoYu' }}
+        {{ userInfo.name ?? '游客' }}
       </h2>
       <p class="overflow-hidden text-xs text-gray-500 text-ellipsis whitespace-nowrap">
-        <span
-          v-if="isString(userInfo.description) && userInfo.description !== ''"
-          v-html="userInfo.description"
-        />
+        <span>欢迎使用chatGPT</span>
+        <!-- <span
+          v-if="isNumber(userInfo.freeCount)"
+          v-html="userInfo.freeCount"
+        /> -->
       </p>
     </div>
   </div>
