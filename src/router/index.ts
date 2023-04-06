@@ -32,6 +32,12 @@ const routes: RouteRecordRaw[] = [
   },
 
   {
+    path: '/permission',
+    name: 'permission',
+    component: () => import('@/views/chat/layout/Permission.vue'),
+  },
+
+  {
     path: '/:pathMatch(.*)*',
     name: 'notFound',
     redirect: '/404',

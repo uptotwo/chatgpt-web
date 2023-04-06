@@ -49,3 +49,10 @@ export function fetchVerify<T>(token: string) {
     data: { token },
   })
 }
+
+export function signin<T>(phone: string, password: string) {
+  return post<T>({
+    url: '/signIn',
+    data: { phone, password },
+  })
+}

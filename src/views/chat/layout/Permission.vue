@@ -1,12 +1,22 @@
 <script setup lang='ts'>
 import { computed, ref } from 'vue'
 import { NButton, NInput, NModal, useMessage } from 'naive-ui'
-import { fetchVerify } from '@/api'
+import { signin } from '@/api'
 import { useAuthStore } from '@/store'
 import Icon403 from '@/icons/403.vue'
 
 interface Props {
   visible: boolean
+}
+
+interface SignInResponse {
+  token: string
+  expireAt: number
+  loginUser: LoginUser
+}
+interface LoginUser {
+  account: string
+  avatarUrl: string
 }
 
 defineProps<Props>()
@@ -17,26 +27,27 @@ const ms = useMessage()
 
 const loading = ref(false)
 const token = ref('')
-
-const disabled = computed(() => !token.value.trim() || loading.value)
+const phone = ref('')
+const password = ref('')
+const disabled = computed(() => (!phone.value.trim() || loading.value) || (!password.value.trim() || loading.value))
 
 async function handleVerify() {
-  const secretKey = token.value.trim()
-
-  if (!secretKey)
-    return
+  // const secretKey = token.value.trim()
+  // if (!secretKey)
+  //   return
 
   try {
     loading.value = true
-    await fetchVerify(secretKey)
-    authStore.setToken(secretKey)
+    const { data } = await signin<SignInResponse>(phone.value.trim(), password.value.trim())
+    authStore.setToken(data.token)
     ms.success('success')
     window.location.reload()
   }
   catch (error: any) {
     ms.error(error.message ?? 'error')
     authStore.removeToken()
-    token.value = ''
+    phone.value = ''
+    password.value = ''
   }
   finally {
     loading.value = false
@@ -56,15 +67,17 @@ function handlePress(event: KeyboardEvent) {
     <div class="p-10 bg-white rounded dark:bg-slate-800">
       <div class="space-y-4">
         <header class="space-y-2">
-          <h2 class="text-2xl font-bold text-center text-slate-800 dark:text-neutral-200">
-            403
-          </h2>
-          <p class="text-base text-center text-slate-500 dark:text-slate-500">
+          <h2 class="text-2xl text-center text-slate-800 dark:text-neutral-200">
             {{ $t('common.unauthorizedTips') }}
-          </p>
+          </h2>
+          <!-- <p class="text-base text-center text-slate-500 dark:text-slate-500">
+            {{ $t('common.unauthorizedTips') }}
+          </p> -->
           <Icon403 class="w-[200px] m-auto" />
         </header>
-        <NInput v-model:value="token" type="password" placeholder="" @keypress="handlePress" />
+        <NInput v-model:value="phone" type="text" placeholder="请输入手机号[这将是您的唯一身份认证]" @keypress="handlePress" />
+        <NInput v-model:value="password" type="password" placeholder="请输入密码" @keypress="handlePress" />
+        <!-- <NInput v-model:value="token" type="password" placeholder="" @keypress="handlePress" /> -->
         <NButton
           block
           type="primary"
@@ -72,7 +85,7 @@ function handlePress(event: KeyboardEvent) {
           :loading="loading"
           @click="handleVerify"
         >
-          {{ $t('common.verify') }}
+          登录(未注册则进行注册)
         </NButton>
       </div>
     </div>
