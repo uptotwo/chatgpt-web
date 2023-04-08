@@ -1,5 +1,5 @@
 <script setup lang='ts'>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { NLayout, NLayoutContent } from 'naive-ui'
 import { useRouter } from 'vue-router'
 import Sider from './sider/index.vue'
@@ -20,6 +20,13 @@ const collapsed = computed(() => appStore.siderCollapsed)
 
 const needPermission = computed(() => !!authStore.session?.auth && !authStore.token)
 
+const signInVisible = ref(false)
+
+const showLogin = computed(() => needPermission.value && !signInVisible.value)
+
+function updateSignInVisiable(value: boolean) {
+  signInVisible.value = value
+}
 const getMobileClass = computed(() => {
   if (isMobile.value)
     return ['rounded-none', 'shadow-none']
@@ -46,6 +53,6 @@ const getContainerClass = computed(() => {
         </NLayoutContent>
       </NLayout>
     </div>
-    <Permission :visible="needPermission" />
+    <Permission :visible="showLogin" :sign-in-visible="signInVisible" @update:sign-in-visible="updateSignInVisiable" />
   </div>
 </template>

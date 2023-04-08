@@ -56,3 +56,10 @@ export function signin<T>(phone: string, password: string) {
     data: { phone, password },
   })
 }
+
+export function login<T>(phone: string, password: string) {
+  return post<T>({
+    url: '/login',
+    data: { phone, password },
+  })
+}
