@@ -39,14 +39,15 @@ async function handleVerify() {
   try {
     loading.value = true
     const { data } = await signin<SignInResponse>(phone.value.trim(), password.value.trim())
-    authStore.setToken(data.token)
     ms.success('success')
+    authStore.setToken(data.token)
+    localStorage.setItem('notifyDialogShow', JSON.stringify(true))
     window.location.reload()
   }
   catch (error: any) {
     ms.error(error.message ?? 'error')
     authStore.removeToken()
-    phone.value = ''
+    // phone.value = ''
     password.value = ''
   }
   finally {

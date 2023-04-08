@@ -7,36 +7,10 @@ const NotifyDialog = defineAsyncComponent(() => import('@/components/common/Noti
 
 const show = ref(false)
 const notifyDialogShow = ref(getLocalDialogShow())
-// const notifyDialogShow = computed<boolean>(() => {
-//   const localValue = localStorage.getItem('notifyDialogShow')
-//   return localValue !== null ? JSON.parse(localValue) : true
-// })
-
-// const notifyDialogShow = computed({
-//   get() {
-//     const localValue = localStorage.getItem('notifyDialogShow')
-//     return localValue !== null ? JSON.parse(localValue) : true
-//   },
-//   set(visible: boolean) {
-//     localStorage.setItem('notifyDialogShow', JSON.stringify(visible))
-//   },
-// })
 function getLocalDialogShow() {
-  const localValue = sessionStorage.getItem('notifyDialogShow')
-  return localValue !== null ? JSON.parse(localValue) : true
+  const localValue = localStorage.getItem('notifyDialogShow')
+  return localValue !== null ? JSON.parse(localValue) : false
 }
-// const notifyDialogShow = computed<boolean>(
-//   {
-//     get() {
-//       const localValue = localStorage.getItem('notifyDialogShow')
-
-//       return localValue !== null ? JSON.parse(localValue) : true
-//     },
-//     set(ifshow: boolean) {
-//       localStorage.setItem('notifyDialogShow', JSON.stringify(ifshow))
-//     },
-//   },
-// )
 function setNotifyDialogShow(ifshow: boolean) {
   localStorage.setItem('notifyDialogShow', JSON.stringify(ifshow))
   notifyDialogShow.value = ifshow

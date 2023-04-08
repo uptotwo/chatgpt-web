@@ -17,6 +17,13 @@ export interface Response<T = any> {
   data: T
   message: string | null
   status: string
+  code: string
+}
+export interface ErrorResponse<T = any> {
+  data: T
+  message: string | null
+  status: string
+  code: string
 }
 
 function http<T = any>(

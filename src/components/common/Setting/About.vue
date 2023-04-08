@@ -34,17 +34,17 @@ async function fetchConfig() {
 }
 
 onMounted(() => {
-  fetchConfig()
+  // fetchConfig()
 })
 </script>
 
 <template>
   <NSpin :show="loading">
     <div class="p-4 space-y-4">
-      <h2 class="text-xl font-bold">
-        Version - {{ pkg.version }}
+      <h2 class="text-xl">
+        ComboAI - {{ pkg.version }}
       </h2>
-      <div class="p-2 space-y-2 rounded-md bg-neutral-100 dark:bg-neutral-700">
+      <!-- <div class="p-2 space-y-2 rounded-md bg-neutral-100 dark:bg-neutral-700">
         <p>
           此项目开源于
           <a
@@ -70,6 +70,22 @@ onMounted(() => {
       <p>{{ $t("setting.timeout") }}：{{ config?.timeoutMs ?? '-' }}</p>
       <p>{{ $t("setting.socks") }}：{{ config?.socksProxy ?? '-' }}</p>
       <p>{{ $t("setting.httpsProxy") }}：{{ config?.httpsProxy ?? '-' }}</p>
+    </div> -->
+      <div class="p-2 space-y-2 rounded-md bg-neutral-100 dark:bg-neutral-700 ">
+        <p>
+          扫描二维码加入群聊,第一时间获取最新资讯
+        </p>
+        <p>
+          <img src="../../../assets/groupqrcode.png" alt="加载中,请稍候..." style="width: 30%; aspect-ratio: 1;">
+        </p>
+        <p> 或者添加站长bbthan备注"进群"拉您进群</p>
+        <p>
+          也可以 关注公众号: 陈月亮
+        </p>
+        <p>
+          带您了解最近科技,分享生活学习感悟
+        </p>
+      </div>
     </div>
   </NSpin>
 </template>
