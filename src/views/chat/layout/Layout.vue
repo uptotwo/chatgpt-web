@@ -20,12 +20,17 @@ const collapsed = computed(() => appStore.siderCollapsed)
 
 const needPermission = computed(() => !!authStore.session?.auth && !authStore.token)
 
+const resetPsdVisible = ref(false)
+
 const signInVisible = ref(false)
 
-const showLogin = computed(() => needPermission.value && !signInVisible.value)
+const showLogin = computed(() => needPermission.value && !signInVisible.value && !resetPsdVisible.value)
 
 function updateSignInVisiable(value: boolean) {
   signInVisible.value = value
+}
+function updateResetPsdVisible(value: boolean) {
+  resetPsdVisible.value = value
 }
 const getMobileClass = computed(() => {
   if (isMobile.value)
@@ -53,6 +58,6 @@ const getContainerClass = computed(() => {
         </NLayoutContent>
       </NLayout>
     </div>
-    <Permission :visible="showLogin" :sign-in-visible="signInVisible" @update:sign-in-visible="updateSignInVisiable" />
+    <Permission :visible="showLogin" :sign-in-visible="signInVisible" :reset-psd-visible="resetPsdVisible" @update:sign-in-visible="updateSignInVisiable" @update:reset-psd-visible="updateResetPsdVisible" />
   </div>
 </template>

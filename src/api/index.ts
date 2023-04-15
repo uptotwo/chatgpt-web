@@ -63,3 +63,24 @@ export function login<T>(phone: string, password: string) {
     data: { phone, password },
   })
 }
+
+export function getVerifyCode<T>(phone: string) {
+  return post<T>({
+    url: '/getVerifyCode',
+    data: { phone },
+  })
+}
+
+export function verifyPhoneCode<T>(phone: string, code: string) {
+  return post<T>({
+    url: '/verifyPhoneCode',
+    data: { phone, code },
+  })
+}
+
+export function resetPsd<T>(phone: string, password: string) {
+  return post<T>({
+    url: '/resetPsd',
+    data: { phone, password },
+  })
+}
