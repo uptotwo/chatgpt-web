@@ -42,5 +42,7 @@ declare namespace Chat {
 		parentMessageId: string
 		role: string
 		text: string
+		totalUsed: number
+		totalQuota: number
 	}
 }

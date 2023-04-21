@@ -1,13 +1,29 @@
 <script setup lang='ts'>
 import { computed } from 'vue'
-import { NAvatar } from 'naive-ui'
+import { NAvatar, NButton } from 'naive-ui'
 import { useUserStore } from '@/store'
-import defaultAvatar from '@/assets/avatar.jpg'
+import defaultAvatar from '@/assets/comboAvatar.jpg'
 import { isString } from '@/utils/is'
+
+interface Props {
+  ifshowGetCode: boolean
+}
+interface Emit {
+  (e: 'update:ifshowGetCode', ifshowGetCode: boolean): void
+}
+const props = defineProps<Props>()
+const emit = defineEmits<Emit>()
+
+// const ifshowGetCode = ref(false)
 
 const userStore = useUserStore()
 
 const userInfo = computed(() => userStore.userInfo)
+
+function toShowGetCode() {
+  if (!props.ifshowGetCode)
+    emit('update:ifshowGetCode', true)
+}
 </script>
 
 <template>
@@ -29,13 +45,22 @@ const userInfo = computed(() => userStore.userInfo)
       <h2 class="overflow-hidden font-bold text-md text-ellipsis whitespace-nowrap">
         {{ userInfo.name ?? '游客' }}
       </h2>
-      <p class="overflow-hidden text-xs text-gray-500 text-ellipsis whitespace-nowrap">
-        <span>欢迎使用chatGPT</span>
-        <!-- <span
+      <!-- <p class="overflow-hidden text-xs text-gray-500 text-ellipsis whitespace-nowrap" /> -->
+      <!-- <span >欢迎使用chatGPT</span> -->
+      <!-- <span
           v-if="isNumber(userInfo.freeCount)"
           v-html="userInfo.freeCount"
         /> -->
-      </p>
+      <template v-if="isString(userInfo.phoneVerified) && userInfo.phoneVerified === 'N'">
+        <NButton size="tiny" text type="primary" @click="toShowGetCode">
+          验证手机获取额度
+        </NButton>
+      </template>
+      <template v-if="isString(userInfo.phoneVerified) && userInfo.phoneVerified === 'Y'">
+        <div class="text-xs">
+          已对话[ {{ userInfo.countsUsed }} ]次
+        </div>
+      </template>
     </div>
   </div>
 </template>

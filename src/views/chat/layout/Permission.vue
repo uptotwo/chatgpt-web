@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { NButton, NInput, NModal, useMessage } from 'naive-ui'
 import { getVerifyCode, login, resetPsd, signin, verifyPhoneCode } from '@/api'
-import { useAuthStore } from '@/store'
+import { useAuthStore, useUserStore } from '@/store'
 import Icon403 from '@/icons/403.vue'
 
 interface Props {
@@ -17,16 +17,22 @@ interface Emit {
 const props = defineProps<Props>()
 const emit = defineEmits<Emit>()
 interface SignInResponse {
+  countsQuota: number
+  countsUsed: number
   token: string
   expireAt: number
   loginUser: LoginUser
+  phoneVerified: string
 }
 interface LoginUser {
+  userId: string
   account: string
   avatarUrl: string
+  simpleUserInfo: any
 }
 const showLogin = computed(() => props.visible)
 const authStore = useAuthStore()
+const userStore = useUserStore()
 
 const ms = useMessage()
 
@@ -35,16 +41,15 @@ const signInloading = ref(false)
 const getCodeButtonLoading = ref(false)
 const resetPsdButtonLoading = ref(false)
 
-const token = ref('')
 const phone = ref('')
 const password = ref('')
 const signInPhone = ref('')
 const signInPassword = ref('')
 const theVerifyPhoneCode = ref('')
 const theResetedPassword = ref('')
-const resettingPsd = ref('')
 const disabled = computed(() => (!phone.value.trim() || loading.value) || (!password.value.trim() || loading.value))
-const signInDisabled = computed(() => (!signInPhone.value.trim() || signInloading.value) || (!signInPassword.value.trim() || signInloading.value))
+const signInDisabled = computed(() => (!signInPhone.value.trim() || signInloading.value) || (!signInPassword.value.trim() || signInloading.value
+|| !signInPassword.value.trim() || !theVerifyPhoneCode.value.trim() || theVerifyPhoneCode.value.length !== 6))
 const verifyPhoneCodeButtonDisabled = computed(() => (!phone.value.trim() || phone.value.trim().length !== 11 || !theVerifyPhoneCode.value.trim() || theVerifyPhoneCode.value.trim().length !== 6))
 const resetPsdButtonDisabled = computed(() => !theResetedPassword.value.trim() || theResetedPassword.value.trim().length < 4 || theResetedPassword.value.trim().length > 12 || resetPsdButtonLoading.value)
 const ifshowGetCode = ref(true)
@@ -56,7 +61,8 @@ async function handleVerify() {
   try {
     loading.value = true
     const { data } = await login<SignInResponse>(phone.value.trim(), password.value.trim())
-    ms.success('success')
+    storeUserInfos(data)
+    ms.success('登录成功', { duration: 2000 })
     authStore.setToken(data.token)
     localStorage.setItem('notifyDialogShow', JSON.stringify(true))
     window.location.reload()
@@ -71,6 +77,23 @@ async function handleVerify() {
     loading.value = false
   }
 }
+
+function storeUserInfos(data: SignInResponse) {
+  const userInfo: any = {
+    userId: data.loginUser.userId,
+    name: data.loginUser.simpleUserInfo.nickName,
+    // description: string
+    countsQuota: data.countsQuota,
+    countsUsed: data.countsUsed,
+    account: data.loginUser.account,
+    phoneVerified: data.phoneVerified,
+  }
+  if (data.loginUser.avatarUrl)
+    userInfo.avatar = data.loginUser.avatarUrl
+
+  userStore.updateUserInfo(userInfo)
+}
+
 function jumpSignIn() {
   emit('update:signInVisible', true)
 }
@@ -87,7 +110,8 @@ async function handleSignIn() {
   try {
     signInloading.value = true
     const { data } = await signin<SignInResponse>(signInPhone.value.trim(), signInPassword.value.trim())
-    ms.success('success')
+    storeUserInfos(data)
+    ms.success('注册成功,已登录', { duration: 2000 })
     authStore.setToken(data.token)
     localStorage.setItem('notifyDialogShow', JSON.stringify(true))
     window.location.reload()
@@ -124,11 +148,35 @@ function validateHandlePress(event: KeyboardEvent) {
 const waitingSecond = ref(0)
 const getCodeWord = computed(() => `获取验证码 ${waitingSecond.value === 0 ? '' : `(${waitingSecond.value})`}`)
 const getCodeButtonDisabled = computed(() => !phone.value.trim() || phone.value.length !== 11 || getCodeButtonLoading.value || waitingSecond.value !== 0)
+const signInGetCodeButtonDisabled = computed(() => !signInPhone.value.trim() || signInPhone.value.length !== 11 || getCodeButtonLoading.value
+|| waitingSecond.value !== 0)
 // 倒计时
 async function handleGetCode() {
   getCodeButtonLoading.value = true
   try {
     const { data } = await getVerifyCode<string>(phone.value.trim())
+    ms.success(data ?? '发送成功,请注意查收', { duration: 1000 })
+  }
+  catch (error: any) {
+    ms.error(error.message ?? '发送失败,请稍后重试', { duration: 2000 })
+    // phone.value = ''
+  }
+  // 后台去获取
+  getCodeButtonLoading.value = false
+  let seconds = 60
+  const countdownTimer = setInterval(() => {
+    waitingSecond.value = seconds
+    if (seconds <= 0)
+      clearInterval(countdownTimer)
+    else
+      seconds--
+  }, 1000)
+}
+// 倒计时
+async function handleSignInGetCode() {
+  getCodeButtonLoading.value = true
+  try {
+    const { data } = await getVerifyCode<string>(signInPhone.value.trim())
     ms.success(data ?? '发送成功,请注意查收', { duration: 1000 })
   }
   catch (error: any) {
@@ -217,6 +265,14 @@ async function toResetPsd() {
         <NInput v-model:value="signInPhone" type="text" placeholder="请输入手机号[唯一凭证]" @keypress="singInHandlePress" />
         <NInput v-model:value="signInPassword" type="password" placeholder="请输入密码[4-12位]" show-password-on="click" @keypress="singInHandlePress" />
         <!-- <NInput v-model:value="token" type="password" placeholder="" @keypress="handlePress" /> -->
+        <div class="flex items-center space-x-4">
+          <div class="flex-1">
+            <NInput v-model:value="theVerifyPhoneCode" type="text" placeholder="请输入验证码" @keypress="validateHandlePress" />
+          </div>
+          <NButton type="primary" :disabled="signInGetCodeButtonDisabled" :loading="getCodeButtonLoading" @click="handleSignInGetCode">
+            {{ getCodeWord }}
+          </NButton>
+        </div>
         <NButton block type="primary" :disabled="signInDisabled" :loading="signInloading" @click="handleSignIn">
           注册并登录
         </NButton>

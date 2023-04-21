@@ -3,11 +3,14 @@ import { ss } from '@/utils/storage'
 const LOCAL_NAME = 'userStorage'
 
 export interface UserInfo {
+  userId: string
   avatar: string
   name: string
   description: string
-  countsPaid: number
-  countsFree: number
+  countsQuota: number
+  countsUsed: number
+  account: string
+  phoneVerified: string
 }
 
 export interface UserState {
@@ -17,11 +20,15 @@ export interface UserState {
 export function defaultSetting(): UserState {
   return {
     userInfo: {
-      avatar: 'https://raw.githubusercontent.com/Chanzhaoyu/chatgpt-web/main/src/assets/avatar.jpg',
+      userId: '',
+      // https://raw.githubusercontent.com/Chanzhaoyu/chatgpt-web/main/src/assets/avatar.jpg
+      avatar: 'https://chenyl.fun/wp-content/uploads/2023/04/avatarF.png',
       name: '游客',
       description: '欢迎使用chatGPT',
-      countsPaid: 0,
-      countsFree: 100,
+      countsQuota: 20,
+      countsUsed: 0,
+      account: 'default-account',
+      phoneVerified: 'N',
     },
   }
 }

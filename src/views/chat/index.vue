@@ -57,10 +57,10 @@ dataSources.value.forEach((item, index) => {
 
 const userStore = useUserStore()
 
-function handleSubmit() {
-  userStore.decreaseCount()
-  onConversation()
-}
+// function handleSubmit() {
+//   userStore.decreaseCount()
+//   onConversation()
+// }
 
 async function onConversation() {
   let message = prompt.value
@@ -126,6 +126,9 @@ async function onConversation() {
             chunk = responseText.substring(lastIndex)
           try {
             const data = JSON.parse(chunk)
+            // debugger
+            // console.log(`-------------------chunk:${chunk}`)
+            updateCounts(data.totalUsed, data.totalQuota)
             updateChat(
               +uuid,
               dataSources.value.length - 1,
@@ -210,6 +213,11 @@ async function onConversation() {
   }
 }
 
+function updateCounts(totalUsed: number, totalQuota: number) {
+  if (totalUsed)
+    userStore.updateUserInfo({ countsUsed: totalUsed, countsQuota: totalQuota })
+}
+
 async function onRegenerate(index: number) {
   if (loading.value)
     return
@@ -258,6 +266,7 @@ async function onRegenerate(index: number) {
             chunk = responseText.substring(lastIndex)
           try {
             const data = JSON.parse(chunk)
+            updateCounts(data.totalUsed, data.totalQuota)
             updateChat(
               +uuid,
               index,
@@ -397,13 +406,13 @@ function handleEnter(event: KeyboardEvent) {
   if (!isMobile.value) {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault()
-      handleSubmit()
+      onConversation()
     }
   }
   else {
     if (event.key === 'Enter' && event.ctrlKey) {
       event.preventDefault()
-      handleSubmit()
+      onConversation()
     }
   }
 }
@@ -550,7 +559,7 @@ onUnmounted(() => {
               />
             </template>
           </NAutoComplete>
-          <NButton type="primary" :disabled="buttonDisabled" @click="handleSubmit">
+          <NButton type="primary" :disabled="buttonDisabled" @click="onConversation">
             <template #icon>
               <span class="dark:text-black">
                 <SvgIcon icon="ri:send-plane-fill" />

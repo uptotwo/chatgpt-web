@@ -1,5 +1,5 @@
 import type { AxiosProgressEvent, GenericAbortSignal } from 'axios'
-import { post } from '@/utils/request'
+import { get, post } from '@/utils/request'
 import { useSettingStore } from '@/store'
 
 export function fetchChatAPI<T = any>(
@@ -82,5 +82,35 @@ export function resetPsd<T>(phone: string, password: string) {
   return post<T>({
     url: '/resetPsd',
     data: { phone, password },
+  })
+}
+
+export function editUser<T = string>(json: any) {
+  return post<T>({
+    url: '/editUser',
+    data: json,
+  })
+}
+export function logout<T>() {
+  return get<T>({
+    url: '/logout',
+  })
+}
+export function getSts<T>() {
+  return get<T>({
+    url: '/getSts',
+  })
+}
+
+export function saveOrUpdateAvatar<T = string>(json: any) {
+  return post<T>({
+    url: '/saveOrUpdateAvatar',
+    data: json,
+  })
+}
+
+export function freeTrial<T>() {
+  return get<T>({
+    url: '/freeTrial',
   })
 }

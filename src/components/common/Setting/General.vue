@@ -1,16 +1,39 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue'
-import { NButton, NInput, NPopconfirm, NSelect, useMessage } from 'naive-ui'
+import { NAvatar, NButton, NInput, NPopconfirm, NSelect, NUpload, useMessage } from 'naive-ui'
+import OSS from 'ali-oss'
 import type { Language, Theme } from '@/store/modules/app/helper'
 import { SvgIcon } from '@/components/common'
-import { useAppStore, useUserStore } from '@/store'
+import { useAppStore, useAuthStore, useOssInfoStore, useUserStore } from '@/store'
+import type { OssClientInfo } from '@/store/modules/oss/helper'
 import type { UserInfo } from '@/store/modules/user/helper'
 import { getCurrentDate } from '@/utils/functions'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { t } from '@/locales'
+import { editUser, getSts, logout, saveOrUpdateAvatar } from '@/api'
+interface Props {
+  visible: boolean
+}
+interface UploadedAvatar {
+  fileId: string
+  url: string
+  size: number
+  name: string
+  type: string
+  code: string
+  oname: string
+}
+interface Emit {
+  (e: 'update:visible', visible: boolean): void
+}
+const props = defineProps<Props>()
 
+const emit = defineEmits<Emit>()
+
+const authStore = useAuthStore()
 const appStore = useAppStore()
 const userStore = useUserStore()
+const ossInfoStore = useOssInfoStore()
 
 const { isMobile } = useBasicLayout()
 
@@ -20,13 +43,21 @@ const theme = computed(() => appStore.theme)
 
 const userInfo = computed(() => userStore.userInfo)
 
+const uploadedAvatar: UploadedAvatar = { fileId: '', url: '', size: 0, name: '', type: '', code: '', oname: '' }
+
+const uploadedAvatarUrl = ref('')
+
+const showingAvatar = computed(() => uploadedAvatarUrl.value || userInfo.value.avatar)
+
+const ossInfo = computed(() => ossInfoStore.ossClientInfo)
+
 const avatar = ref(userInfo.value.avatar ?? '')
 
 const name = ref(userInfo.value.name ?? '')
 
-const countsFree = ref(userInfo.value.countsFree ?? 0)
+const countsFree = ref(userInfo.value.countsQuota ?? 0)
 
-const countsPaid = ref(userInfo.value.countsPaid ?? 0)
+const countsPaid = ref(userInfo.value.countsUsed ?? 0)
 
 const language = computed({
   get() {
@@ -61,20 +92,41 @@ const languageOptions: { label: string; key: Language; value: Language }[] = [
   { label: 'English', key: 'en-US', value: 'en-US' },
 ]
 
-function updateUserInfo(options: Partial<UserInfo>) {
+async function updateUserInfo(options: Partial<UserInfo>) {
+  try {
+    const { data } = await editUser<string>(options)
+    ms.success(data ?? '保存成功')
+  }
+  catch (error: any) {
+    ms.error(error)
+  }
   userStore.updateUserInfo(options)
-  ms.success(t('common.success'))
 }
-
-function handleReset() {
-  userStore.resetUserInfo()
-  ms.success(t('common.success'))
-  window.location.reload()
+async function updateUserName(options: Partial<UserInfo>) {
+  try {
+    const { data } = await editUser<string>({ nickName: options.name })
+    ms.success(data ?? '保存成功')
+  }
+  catch (error: any) {
+    ms.error(error)
+  }
+  userStore.updateUserInfo(options)
 }
+// function handleReset() {
+//   userStore.resetUserInfo()
+//   ms.success(t('common.success'))
+//   window.location.reload()
+// }
 function handleLogout() {
-  userStore.resetUserInfo()
-  ms.success(t('common.success'))
-  window.location.reload()
+  try {
+    logout()
+  }
+  finally {
+    userStore.resetUserInfo()
+    emit('update:visible', false)
+    authStore.removeToken()
+  }
+  ms.success('退出成功', { duration: 2 * 1000 })
 }
 
 function exportData(): void {
@@ -125,6 +177,72 @@ function handleImportButtonClick(): void {
   if (fileInput)
     fileInput.click()
 }
+interface UploadCustomRequestOptions {
+  file: any
+  action?: string
+  data?:
+  | Record<string, string>
+  | (({ file }: { file: any }) => Record<string, string>)
+  withCredentials?: boolean
+  headers?:
+  | Record<string, string>
+  | (({ file }: { file: any }) => Record<string, string>)
+  onProgress: (e: { percent: number }) => void
+  onFinish: () => void
+  onError: () => void
+}
+async function rereshOssInfo() {
+  if (!ossInfoStore.$state.ossClientInfo.accessKeyId || ossInfoStore.$state.ossClientInfo.expiration < new Date().getTime()) {
+    const { data } = await getSts<OssClientInfo>()
+    const refreshSTSToken = { ...data, stsToken: data.securityToken }
+    const fullData = { ...data, bucket: 'comboaiavatarbucket', region: 'oss-cn-beijing', stsToken: data.securityToken, refreshSTSToken }
+    ossInfoStore.updateOssClientInfo(fullData)
+    return fullData
+  }
+  return ossInfo.value
+  // }
+}
+
+// : Promise<void>
+async function uploadAvatar(option: UploadCustomRequestOptions) {
+  const fullData = await rereshOssInfo()
+  const client = new OSS(fullData)
+  if (option.file.type !== 'image/png' && option.file.type !== 'image/jpeg') {
+    ms.warning('必须为png或者jpeg文件')
+    return
+  }
+  const fileSuffix = option.file.type === 'image/png' ? 'png' : 'jpg'
+  if (option.file.file.size > 1024 * 1024 * 2) {
+    ms.warning('图片不能大于2Mb')
+    return
+  }
+  const userAbout: string = (userInfo.value.name ?? 'default-name') + (new Date().toLocaleTimeString().replace(/ /g, '').replace(/\//g, '-').replace(/:/g, '-'))
+  const fileUploadName = `exampledir/avatar-${userAbout}.${fileSuffix}`
+  client.put(fileUploadName, option.file.file)
+    .then(
+      (res: any) => {
+        uploadedAvatarUrl.value = res.url
+        uploadedAvatar.url = res.url
+        uploadedAvatar.size = option.file.file.size / 1024
+        uploadedAvatar.name = fileUploadName
+        uploadedAvatar.type = fileSuffix
+        uploadedAvatar.code = `avatar-${userInfo.value.account}`
+        uploadedAvatar.oname = option.file.name
+      },
+    )
+    .catch(
+      (e: any) => ms.error(e),
+    )
+}
+async function saveAvtarAndUpdateUser() {
+  if (!uploadedAvatar.url)
+    return
+
+  // 这里返回的是fileid
+  const { data } = await saveOrUpdateAvatar<string>(uploadedAvatar)
+  await editUser<string>({ avatar: data })
+  userStore.updateUserInfo({ avatar: uploadedAvatarUrl.value })
+}
 </script>
 
 <template>
@@ -132,19 +250,40 @@ function handleImportButtonClick(): void {
     <div class="space-y-6">
       <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[100px]">{{ $t('setting.avatarLink') }}</span>
-        <div class="flex-1">
-          <NInput v-model:value="avatar" placeholder="" />
+        <div class="flex-2">
+          <!-- :fallback-src="defaultAvatar"  -->
+          <!-- <NInput v-model:value="uploadedAvatarUrl" placeholder="" />
+          <NInput v-model:value="userInfo.avatar" placeholder="" /> -->
+          <NAvatar size="large" round :src="showingAvatar" />
         </div>
-        <NButton size="tiny" text type="primary" @click="updateUserInfo({ avatar })">
+        <div class="flex-2">
+          <NUpload
+            accept="image/png, image/jpeg"
+            :max="1"
+            action="https://oss-cn-beijing.aliyuncs.com"
+            :custom-request="uploadAvatar"
+            :headers="{
+              'naive-info': 'hello!',
+            }"
+            :data="{
+              'naive-data': 'cool! naive!',
+            }"
+          >
+            <NButton>上传头像</NButton>
+          </NUpload>
+        </div>
+        <NButton size="tiny" text type="primary" @click="saveAvtarAndUpdateUser">
           {{ $t('common.save') }}
         </NButton>
       </div>
+
+      <div />
       <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[100px]">{{ $t('setting.name') }}</span>
         <div class="w-[200px]">
           <NInput v-model:value="name" placeholder="" />
         </div>
-        <NButton size="tiny" text type="primary" @click="updateUserInfo({ name })">
+        <NButton size="tiny" text type="primary" @click="updateUserName({ name })">
           {{ $t('common.save') }}
         </NButton>
       </div>
@@ -159,15 +298,17 @@ function handleImportButtonClick(): void {
         </NButton>
       </div> -->
       <div class="flex items-center space-x-4">
-        <span class="flex-shrink-0 w-[100px]">{{ $t('user.countsFree') }}</span>
+        <!-- {{ $t('user.countsFree') }} -->
+        <span class="flex-shrink-0 w-[100px]">已对话次数</span>
         <div class="flex-1">
-          <NInput v-model:value="countsFree" placeholder="" disabled />
+          <NInput v-model:value="userInfo.countsUsed" placeholder="" disabled />
         </div>
       </div>
       <div class="flex items-center space-x-4">
-        <span class="flex-shrink-0 w-[100px]">{{ $t('user.countsPaid') }}</span>
+        <!-- {{ $t('user.countsPaid') }} -->
+        <span class="flex-shrink-0 w-[100px]">可用对话次数</span>
         <div class="flex-1">
-          <NInput v-model:value="countsPaid" placeholder="" disabled />
+          <NInput v-model:value="userInfo.countsQuota" placeholder="" disabled />
         </div>
       </div>
       <div
@@ -234,9 +375,14 @@ function handleImportButtonClick(): void {
       </div>
       <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[100px]">{{ $t('setting.resetUserInfo') }}</span>
-        <NButton size="small" type="warning" @click="handleLogout">
-          退出登录
-        </NButton>
+        <NPopconfirm :on-positive-click="handleLogout" placement="right-end">
+          <template #trigger>
+            <NButton size="small" type="warning">
+              退出登录
+            </NButton>
+          </template>
+          您确定要退出登录吗?
+        </NPopconfirm>
       </div>
     </div>
   </div>

@@ -46,7 +46,7 @@ const show = computed({
             <span class="ml-2">{{ $t('setting.general') }}</span>
           </template>
           <div class="min-h-[100px]">
-            <General />
+            <General :visible="show" @update:visible="show = false" />
           </div>
         </NTabPane>
         <NTabPane v-if="isChatGPTAPI" name="Advanced" tab="Advanced">
