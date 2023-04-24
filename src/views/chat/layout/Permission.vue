@@ -109,7 +109,7 @@ function jumpLogin() {
 async function handleSignIn() {
   try {
     signInloading.value = true
-    const { data } = await signin<SignInResponse>(signInPhone.value.trim(), signInPassword.value.trim())
+    const { data } = await signin<SignInResponse>(signInPhone.value.trim(), signInPassword.value.trim(), theVerifyPhoneCode.value.trim())
     storeUserInfos(data)
     ms.success('注册成功,已登录', { duration: 2000 })
     authStore.setToken(data.token)

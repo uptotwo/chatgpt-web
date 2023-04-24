@@ -41,7 +41,9 @@ export const useAuthStore = defineStore('auth-store', {
       this.token = token
       setToken(token)
     },
-
+    getToken() {
+      return this.token
+    },
     removeToken() {
       this.token = undefined
       removeToken()

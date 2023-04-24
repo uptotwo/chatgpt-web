@@ -6,13 +6,14 @@ import List from './List.vue'
 import Footer from './Footer.vue'
 import { useAppStore, useChatStore } from '@/store'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
-import { PromptStore } from '@/components/common'
+import { PromptStore, QuotaStore } from '@/components/common'
 
 const appStore = useAppStore()
 const chatStore = useChatStore()
 
 const { isMobile } = useBasicLayout()
 const show = ref(false)
+const quotaShow = ref(false)
 
 const collapsed = computed(() => appStore.siderCollapsed)
 
@@ -79,9 +80,12 @@ watch(
         <div class="flex-1 min-h-0 pb-4 overflow-hidden">
           <List />
         </div>
-        <div class="p-4">
+        <div class="p-4 ">
           <NButton block @click="show = true">
             {{ $t('store.siderButton') }}
+          </NButton>
+          <NButton block @click="quotaShow = true">
+            额度商店
           </NButton>
         </div>
       </main>
@@ -92,4 +96,5 @@ watch(
     <div v-show="!collapsed" class="fixed inset-0 z-40 bg-black/40" @click="handleUpdateCollapsed" />
   </template>
   <PromptStore v-model:visible="show" />
+  <QuotaStore v-model:visible="quotaShow" />
 </template>

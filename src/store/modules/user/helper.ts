@@ -22,7 +22,8 @@ export function defaultSetting(): UserState {
     userInfo: {
       userId: '',
       // https://raw.githubusercontent.com/Chanzhaoyu/chatgpt-web/main/src/assets/avatar.jpg
-      avatar: 'https://chenyl.fun/wp-content/uploads/2023/04/avatarF.png',
+      // 'https://chenyl.fun/wp-content/uploads/2023/04/avatarF.png',
+      avatar: 'http://comboaiavatarbucket.oss-cn-beijing.aliyuncs.com/exampledir/avatar-156*006210-25-01PM.png',
       name: '游客',
       description: '欢迎使用chatGPT',
       countsQuota: 20,

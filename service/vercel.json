@@ -1,6 +1,5 @@
 {
-    "build": {
-      "command": "pnpm build;pnpm prod"
-    }
+  "build": {
+    "command": "pnpm build;pnpm prod"
   }
-  
+}

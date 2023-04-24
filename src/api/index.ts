@@ -50,10 +50,10 @@ export function fetchVerify<T>(token: string) {
   })
 }
 
-export function signin<T>(phone: string, password: string) {
+export function signin<T>(phone: string, password: string, verifyCode: string) {
   return post<T>({
     url: '/signIn',
-    data: { phone, password },
+    data: { phone, password, verifyCode },
   })
 }
 
@@ -112,5 +112,23 @@ export function saveOrUpdateAvatar<T = string>(json: any) {
 export function freeTrial<T>() {
   return get<T>({
     url: '/freeTrial',
+  })
+}
+
+export function verifyPaid<T>(uuid: string) {
+  return get<T>({
+    url: `/verifyPaid?uuid=${uuid}`,
+  })
+}
+
+export function closeBill<T>(uuid: string) {
+  return get<T>({
+    url: `/closeBill?bill=${uuid}`,
+  })
+}
+
+export function getQrcode<T>(uuid: string) {
+  return get<T>({
+    url: `/getQrcode?uuid=${uuid}`,
   })
 }
