@@ -243,13 +243,14 @@ async function saveAvtarAndUpdateUser() {
   await editUser<string>({ avatar: data })
   userStore.updateUserInfo({ avatar: uploadedAvatarUrl.value })
 }
+const avatarTextClass = isMobile.value ? 'w-[100px]':'flex-shrink-0 w-[100px]'
 </script>
 
 <template>
   <div class="p-4 space-y-5 min-h-[200px]">
     <div class="space-y-6">
       <div class="flex items-center space-x-4">
-        <span class="flex-shrink-0 w-[100px]">{{ $t('setting.avatarLink') }}</span>
+        <span :class="avatarTextClass">头像</span>
         <div class="flex-2">
           <!-- :fallback-src="defaultAvatar"  -->
           <!-- <NInput v-model:value="uploadedAvatarUrl" placeholder="" />

@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { NAvatar, NButton } from 'naive-ui'
 import { useUserStore } from '@/store'
-import defaultAvatar from '@/assets/comboAvatar.jpg'
+import defaultAvatar from '@/assets/comboAvatar.png'
 import { isString } from '@/utils/is'
 
 interface Props {

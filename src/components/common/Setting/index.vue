@@ -61,7 +61,7 @@ const show = computed({
         <NTabPane name="Config" tab="Config">
           <template #tab>
             <SvgIcon class="text-lg" icon="ri:list-settings-line" />
-            <span class="ml-2">{{ $t('setting.config') }}</span>
+            <span class="ml-2">关于我们</span>
           </template>
           <About />
         </NTabPane>

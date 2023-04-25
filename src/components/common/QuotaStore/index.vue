@@ -8,6 +8,8 @@ import { useAuthStore, usePromptStore, useUserStore } from '@/store'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { t } from '@/locales'
 import { closeBill, getQrcode, verifyPaid } from '@/api'
+import defaultAvatar from '@/assets/comboAvatar.png'
+import { ms } from 'date-fns/locale'
 
 interface DataProps {
   renderKey: string
@@ -51,6 +53,9 @@ const promptStore = usePromptStore()
 
 const authStore = useAuthStore()
 
+const buyButtonWord = isMobile.value ? '购买' : '点击购买'
+const modalStyle = isMobile.value ? 'width: 100%; max-width: 400px;' : 'width: 90%; max-width: 500px;'
+const operationWidth = isMobile.value ? 80 : 150
 // Prompt在线导入推荐List,根据部署者喜好进行修改(assets/recommend.json)
 const promptRecommendList = PromptRecommend
 const promptList = ref<any>(promptStore.promptList)
@@ -92,7 +97,7 @@ const setDownloadURL = (url: string) => {
 }
 
 // 控制 input 按钮
-const inputStatus = computed (() => tempPromptKey.value.trim().length < 1 || tempPromptValue.value.trim().length < 1)
+const inputStatus = computed(() => tempPromptKey.value.trim().length < 1 || tempPromptValue.value.trim().length < 1)
 
 // Prompt模板相关操作
 const addPromptTemplate = () => {
@@ -353,6 +358,8 @@ const createQuotaColumns = (): DataTableColumns<RowData> => {
       key: 'goodsPrice',
     },
     {
+      width: operationWidth,
+      align: 'left',
       title: '操作',
       key: 'actions',
       render(row: any) {
@@ -362,7 +369,7 @@ const createQuotaColumns = (): DataTableColumns<RowData> => {
             size: 'small',
             onClick: () => tobuy(row),
           },
-          { default: () => '点击购买' },
+          { default: () => buyButtonWord },
         )
       },
     },
@@ -392,7 +399,9 @@ function tobuy(row: any) {
     uuid: myUuid,
   }
   qrcodeUrl.value = `${buyUrl}?goodsCode=${buying.value.goodsCode}&uuid=${myUuid}&token=${authStore.getToken()}`
+  // qrcodeUrl.value = 'http://comboaiavatarbucket.oss-cn-beijing.aliyuncs.com/exampledir/avatar-156*006210-25-01PM.png'
   showQrcode.value = true
+  startLoadingClock()
 }
 const createQuotaData = [
   {
@@ -467,20 +476,54 @@ async function toVerifyPayRes() {
     // phone.value = ''
   }
 }
-async function payModalClose() {
+function payModalClose() {
   try {
-    const { data } = await closeBill<string>(buying.value.uuid)
-    message.warning(data)
+    closeBill<string>(buying.value.uuid)
+    message.warning('交易已关闭')
   }
   catch (error: any) {
     message.error(error.message ?? '交易关闭失败', { duration: 2000 })
     // phone.value = ''
   }
+  qrcodeLoaded.value = false
 }
+const openPayUrlLoading = ref(false)
 async function goPay() {
-  const { data } = await getQrcode<string>(buying.value.uuid)
-  window.open(data, '支付页')
+  openPayUrlLoading.value =true
+  try{
+    const { data } = await getQrcode<string>(buying.value.uuid)
+    window.open(data, '支付页')
+  }
+  catch (error: any) {
+    message.error(error.message ?? '获取链接失败,请稍后重试', { duration: 1000 })
+    // phone.value = ''
+  }
+  openPayUrlLoading.value =false
 }
+const qrcodeLoaded = ref(false)
+function hideLoadingText() {
+  qrcodeLoaded.value = true
+}
+const qrCodeLoadingText = ref('二维码加载中,请稍候')
+function startLoadingClock() {
+  const ori = '二维码加载中,请稍候'
+  let seconds = 30 * 5 //30 sec
+  const countdownTimer = setInterval(() => {
+    if (seconds % 3 == 1) {
+      qrCodeLoadingText.value = ori + '.'
+    } else if (seconds % 3 == 0) {
+      qrCodeLoadingText.value = ori + '...'
+    } else {
+      qrCodeLoadingText.value = ori + '.....'
+    }
+    if (seconds <= 0 || qrcodeLoaded.value == true)
+      clearInterval(countdownTimer)
+    else
+      seconds--
+  }, 200)
+}
+
+
 </script>
 
 <template>
@@ -488,18 +531,13 @@ async function goPay() {
     <div class="space-y-4">
       <NTabs type="segment">
         <NTabPane name="quotaStore" tab="对话次数购买">
-          <NDataTable
-            v-if="!isMobile"
-            :max-height="400"
-            :columns="quotaColumns"
-            :data="quotaData"
-            :bordered="false"
-          />
+          <NDataTable :max-height="400" :columns="quotaColumns" :data="quotaData" :bordered="false" />
         </NTabPane>
       </NTabs>
     </div>
   </NModal>
-  <NModal v-model:show="showQrcode" style="width: 90%; max-width: 500px;" preset="card" :on-close="payModalClose">
+  <NModal v-model:show="showQrcode" :style="modalStyle" preset="card" :close-on-esc="false"
+    :on-after-leave="payModalClose">
     <div v-if="showQrcode" class="space-y-4 items-center">
       <h2 class="text-xl text-center text-slate-800 dark:text-neutral-200">
         您当前要订购的套餐为:
@@ -507,19 +545,21 @@ async function goPay() {
       <br>
       <span class="flex-shrink-0 w-[200px] text-center text-base">{{ buying.goodsTitle }}</span>
       <br>
-      <span class="flex-shrink-0 w-[100px] ">价格:  {{ buying.goodsPrice }} (人民币/元)</span>
-      <span />
+      <span class="flex-shrink-0 w-[100px] ">价格: {{ buying.goodsPrice }} (人民币/元)</span>
       <!-- https://ppt.chnlib.com/FileUpload/2018-11/7-Cai_Se_Re_1i_1iu_Gao-110740_144.png -->
-      <NImage class="items-center" :src="qrcodeUrl" width="200" />
+      <NImage :hidden="!qrcodeLoaded" :on-load="hideLoadingText" :src="qrcodeUrl" width="200" object-fit="contain"/>
+      <!-- <div class="flex-shrink-0 w-[200px] text-center text-base"> -->
+        <span class="flex-shrink-0 w-[200px] text-center text-base" :hidden="qrcodeLoaded">{{ qrCodeLoadingText }}</span>
+      <!-- </div> -->
       <div class="flex items-center space-x-4">
         <!-- <NImage src="https://ppt.chnlib.com/FileUpload/2018-11/7-Cai_Se_Re_1i_1iu_Gao-110740_144.png" width="200" /> -->
         <div class="flex-1 items-center">
-          <span>支付宝扫描上方二维码  </span>
+          <span>支付宝扫描上方二维码 </span>
           或者
-          <NButton type="primary" text size="large" @click="goPay">
+          <NButton type="primary" text size="large" :loading="openPayUrlLoading" @click="goPay">
             [点击这里]
           </NButton>
-          <span>  进行支付  </span>
+          <span> 进行支付 </span>
         </div>
       </div>
       <NButton block type="primary" :disabled="verifyPayDisabled" :loading="verifyPayLoading" @click="toVerifyPayRes">
