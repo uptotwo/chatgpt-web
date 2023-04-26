@@ -243,45 +243,41 @@ async function saveAvtarAndUpdateUser() {
   await editUser<string>({ avatar: data })
   userStore.updateUserInfo({ avatar: uploadedAvatarUrl.value })
 }
-const avatarTextClass = isMobile.value ? 'w-[100px]':'flex-shrink-0 w-[100px]'
+const avatarTextClass = isMobile.value ? 'w-[100px]' : 'flex-shrink-0 w-[100px]'
 </script>
 
 <template>
   <div class="p-4 space-y-5 min-h-[200px]">
     <div class="space-y-6">
-      <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-4" >
         <span :class="avatarTextClass">头像</span>
-        <div class="flex-2">
-          <!-- :fallback-src="defaultAvatar"  -->
-          <!-- <NInput v-model:value="uploadedAvatarUrl" placeholder="" />
-          <NInput v-model:value="userInfo.avatar" placeholder="" /> -->
+        <div>
           <NAvatar size="large" round :src="showingAvatar" />
         </div>
-        <div class="flex-2">
-          <NUpload
-            accept="image/png, image/jpeg"
-            :max="1"
-            action="https://oss-cn-beijing.aliyuncs.com"
-            :custom-request="uploadAvatar"
-            :headers="{
-              'naive-info': 'hello!',
-            }"
-            :data="{
-              'naive-data': 'cool! naive!',
-            }"
-          >
-            <NButton>上传头像</NButton>
+
+        <div class="w-[80px]">
+          <NUpload accept="image/png, image/jpeg" :max="1" action="https://oss-cn-beijing.aliyuncs.com"
+            :custom-request="uploadAvatar" :headers="{
+                'naive-info': 'hello!',
+              }" :data="{
+      'naive-data': 'cool! naive!',
+    }">
+            <NButton >上传头像</NButton>
           </NUpload>
         </div>
-        <NButton size="tiny" text type="primary" @click="saveAvtarAndUpdateUser">
-          {{ $t('common.save') }}
-        </NButton>
+        <div>
+          <NButton size="tiny" text type="primary" @click="saveAvtarAndUpdateUser">
+            {{ $t('common.save') }}
+          </NButton>
+        </div>
+
+
       </div>
 
       <div />
       <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[100px]">{{ $t('setting.name') }}</span>
-        <div class="w-[200px]">
+        <div class="w-[100px]">
           <NInput v-model:value="name" placeholder="" />
         </div>
         <NButton size="tiny" text type="primary" @click="updateUserName({ name })">
@@ -312,10 +308,7 @@ const avatarTextClass = isMobile.value ? 'w-[100px]':'flex-shrink-0 w-[100px]'
           <NInput v-model:value="userInfo.countsQuota" placeholder="" disabled />
         </div>
       </div>
-      <div
-        class="flex items-center space-x-4"
-        :class="isMobile && 'items-start'"
-      >
+      <div class="flex items-center space-x-4" :class="isMobile && 'items-start'">
         <span class="flex-shrink-0 w-[100px]">{{ $t('setting.chatHistory') }}</span>
 
         <div class="flex flex-wrap items-center gap-4">
@@ -351,11 +344,7 @@ const avatarTextClass = isMobile.value ? 'w-[100px]':'flex-shrink-0 w-[100px]'
         <span class="flex-shrink-0 w-[100px]">{{ $t('setting.theme') }}</span>
         <div class="flex flex-wrap items-center gap-4">
           <template v-for="item of themeOptions" :key="item.key">
-            <NButton
-              size="small"
-              :type="item.key === theme ? 'primary' : undefined"
-              @click="appStore.setTheme(item.key)"
-            >
+            <NButton size="small" :type="item.key === theme ? 'primary' : undefined" @click="appStore.setTheme(item.key)">
               <template #icon>
                 <SvgIcon :icon="item.icon" />
               </template>
@@ -366,12 +355,8 @@ const avatarTextClass = isMobile.value ? 'w-[100px]':'flex-shrink-0 w-[100px]'
       <div class="flex items-center space-x-4">
         <span class="flex-shrink-0 w-[100px]">{{ $t('setting.language') }}</span>
         <div class="flex flex-wrap items-center gap-4">
-          <NSelect
-            style="width: 140px"
-            :value="language"
-            :options="languageOptions"
-            @update-value="value => appStore.setLanguage(value)"
-          />
+          <NSelect style="width: 140px" :value="language" :options="languageOptions"
+            @update-value="value => appStore.setLanguage(value)" />
         </div>
       </div>
       <div class="flex items-center space-x-4">

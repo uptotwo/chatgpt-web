@@ -1,7 +1,8 @@
+config
+dist
 docker-compose
+docs
 kubernetes
-build/*.js
-src/assets 
-public 
-dist 
-src/
+public  
+service
+src
