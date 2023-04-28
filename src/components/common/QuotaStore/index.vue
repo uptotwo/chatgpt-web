@@ -407,7 +407,7 @@ const createQuotaData = [
   {
     goodsCode: 'counts-gpt-35turbo-3',
     goodsType: '',
-    goodsTitle: '3天体验套餐\r\n(限购一次,重复购买无效)',
+    goodsTitle: '3天体验套餐',
     goodsDesc: '3天,限量200次',
     goodsPrice: '9.9',
     totalLimit: 200,
@@ -465,6 +465,7 @@ const verifyPayLoading = ref(false)
 const verifyPayDisabled = computed(() => verifyPayLoading.value)
 
 async function toVerifyPayRes() {
+  verifyPayLoading.value = true
   try {
     const { data } = await verifyPaid<any>(buying.value.uuid)
     userStore.updateUserInfo({ countsUsed: data.totalUsed, countsQuota: data.quota })
@@ -475,11 +476,12 @@ async function toVerifyPayRes() {
     message.error(error.message ?? '验证失败', { duration: 2000 })
     // phone.value = ''
   }
+  verifyPayLoading.value = false
 }
 function payModalClose() {
   try {
     closeBill<string>(buying.value.uuid)
-    message.warning('交易已关闭')
+    // message.warning('交易已关闭')
   }
   catch (error: any) {
     message.error(error.message ?? '交易关闭失败', { duration: 2000 })
@@ -545,11 +547,14 @@ function startLoadingClock() {
       <br>
       <span class="flex-shrink-0 w-[200px] text-center text-base">{{ buying.goodsTitle }}</span>
       <br>
-      <span class="flex-shrink-0 w-[100px] ">价格: {{ buying.goodsPrice }} (人民币/元)</span>
+      <span class="flex-shrink-0 w-[100px] ">价格: {{ buying.goodsPrice }} (人民币/元)</span>      
       <!-- https://ppt.chnlib.com/FileUpload/2018-11/7-Cai_Se_Re_1i_1iu_Gao-110740_144.png -->
       <NImage :hidden="!qrcodeLoaded" :on-load="hideLoadingText" :src="qrcodeUrl" width="200" object-fit="contain"/>
       <!-- <div class="flex-shrink-0 w-[200px] text-center text-base"> -->
         <span class="flex-shrink-0 w-[200px] text-center text-base" :hidden="qrcodeLoaded">{{ qrCodeLoadingText }}</span>
+        <br>
+        <br>
+        <span :hidden="!qrcodeLoaded" class="flex-shrink-0 w-[100px] ">订单10分钟后自动关闭,请及时支付</span>
       <!-- </div> -->
       <div class="flex items-center space-x-4">
         <!-- <NImage src="https://ppt.chnlib.com/FileUpload/2018-11/7-Cai_Se_Re_1i_1iu_Gao-110740_144.png" width="200" /> -->
