@@ -1,7 +1,7 @@
 <script setup lang='ts'>
 import type { DataTableColumns } from 'naive-ui'
 import { computed, h, ref, watch } from 'vue'
-import { NButton, NDataTable, NImage, NModal, NTabPane, NTabs, useMessage } from 'naive-ui'
+import { NButton, NDataTable, NImage, NModal, NTabPane, NTabs, useMessage,NPopconfirm } from 'naive-ui'
 import { v4 as uuidv4 } from 'uuid'
 import PromptRecommend from '../../../assets/recommend.json'
 import { useAuthStore, usePromptStore, useUserStore } from '@/store'
@@ -380,6 +380,7 @@ interface Goods {
   goodsTitle: string
   goodsPrice: string
   uuid: string
+  [propName:string] :any
 }
 
 const buying = ref<Goods>({
@@ -392,11 +393,13 @@ const qrcodeUrl = ref('')
 const buyUrl = `${import.meta.env.VITE_GLOB_API_URL}/buy`
 function tobuy(row: any) {
   const myUuid: string = uuidv4()
+  const dayCost = (parseFloat(row.goodsPrice)/row.quotaDay).toFixed(1)
   buying.value = {
     goodsCode: row.goodsCode,
     goodsTitle: row.goodsTitle,
     goodsPrice: row.goodsPrice,
     uuid: myUuid,
+    dayCost: dayCost
   }
   qrcodeUrl.value = `${buyUrl}?goodsCode=${buying.value.goodsCode}&uuid=${myUuid}&token=${authStore.getToken()}`
   // qrcodeUrl.value = 'http://comboaiavatarbucket.oss-cn-beijing.aliyuncs.com/exampledir/avatar-156*006210-25-01PM.png'
@@ -478,6 +481,11 @@ async function toVerifyPayRes() {
   }
   verifyPayLoading.value = false
 }
+const leavePayDisabled = computed(() => (verifyPayLoading.value || verifyPayDisabled.value))
+function doLeavePayModal() {
+  showQrcode.value = false
+  message.success("关闭成功!",{duration:1000})
+}
 function payModalClose() {
   try {
     closeBill<string>(buying.value.uuid)
@@ -491,8 +499,8 @@ function payModalClose() {
 }
 const openPayUrlLoading = ref(false)
 async function goPay() {
-  openPayUrlLoading.value =true
-  try{
+  openPayUrlLoading.value = true
+  try {
     const { data } = await getQrcode<string>(buying.value.uuid)
     window.open(data, '支付页')
   }
@@ -500,7 +508,7 @@ async function goPay() {
     message.error(error.message ?? '获取链接失败,请稍后重试', { duration: 1000 })
     // phone.value = ''
   }
-  openPayUrlLoading.value =false
+  openPayUrlLoading.value = false
 }
 const qrcodeLoaded = ref(false)
 function hideLoadingText() {
@@ -524,12 +532,11 @@ function startLoadingClock() {
       seconds--
   }, 200)
 }
-
-
+const qrCodeImageClass = isMobile.value ? 'w-full' : 'w-1/2'
 </script>
 
 <template>
-  <NModal v-model:show="show" style="width: 90%; max-width: 900px;" preset="card">
+  <NModal v-model:show="show" style="width: 90%; max-width: 900px;" preset="card" >
     <div class="space-y-4">
       <NTabs type="segment">
         <NTabPane name="quotaStore" tab="对话次数购买">
@@ -538,23 +545,25 @@ function startLoadingClock() {
       </NTabs>
     </div>
   </NModal>
-  <NModal v-model:show="showQrcode" :style="modalStyle" preset="card" :close-on-esc="false"
+  <NModal v-model:show="showQrcode" :style="modalStyle" preset="card" :close-on-esc="false" :mask-closable="false"
+  :closable="false"
     :on-after-leave="payModalClose">
-    <div v-if="showQrcode" class="space-y-4 items-center">
+    <div v-if="showQrcode" class="space-y-2 items-center">
       <h2 class="text-xl text-center text-slate-800 dark:text-neutral-200">
         您当前要订购的套餐为:
       </h2>
       <br>
       <span class="flex-shrink-0 w-[200px] text-center text-base">{{ buying.goodsTitle }}</span>
       <br>
-      <span class="flex-shrink-0 w-[100px] ">价格: {{ buying.goodsPrice }} (人民币/元)</span>      
+      <span class="flex-shrink-0 w-[100px] ">价格: {{ buying.goodsPrice }} (人民币/元)</span>
       <!-- https://ppt.chnlib.com/FileUpload/2018-11/7-Cai_Se_Re_1i_1iu_Gao-110740_144.png -->
-      <NImage :hidden="!qrcodeLoaded" :on-load="hideLoadingText" :src="qrcodeUrl" width="200" object-fit="contain"/>
+      <div class=" flex justify-center  items-center">
+        <NImage :class="qrCodeImageClass" :hidden="!qrcodeLoaded" :on-load="hideLoadingText" :src="qrcodeUrl"
+          object-fit="contain" />
+      </div>
       <!-- <div class="flex-shrink-0 w-[200px] text-center text-base"> -->
-        <span class="flex-shrink-0 w-[200px] text-center text-base" :hidden="qrcodeLoaded">{{ qrCodeLoadingText }}</span>
-        <br>
-        <br>
-        <span :hidden="!qrcodeLoaded" class="flex-shrink-0 w-[100px] ">订单10分钟后自动关闭,请及时支付</span>
+      <span class="flex-shrink-0 w-[200px] text-center text-base" :hidden="qrcodeLoaded">{{ qrCodeLoadingText }}</span>
+      <span :hidden="!qrcodeLoaded" class="flex-shrink-0 w-[100px]">订单10分钟后自动关闭,请及时支付</span>
       <!-- </div> -->
       <div class="flex items-center space-x-4">
         <!-- <NImage src="https://ppt.chnlib.com/FileUpload/2018-11/7-Cai_Se_Re_1i_1iu_Gao-110740_144.png" width="200" /> -->
@@ -570,6 +579,21 @@ function startLoadingClock() {
       <NButton block type="primary" :disabled="verifyPayDisabled" :loading="verifyPayLoading" @click="toVerifyPayRes">
         已经支付?点击这里
       </NButton>
+      <NPopconfirm :on-positive-click="doLeavePayModal" placement="top"
+       positive-text="永久关闭" :positive-button-props="{type:'tertiary'}"
+       negative-text="我再想想" :negative-button-props="{type:'primary'}">
+          <template #trigger>
+            <NButton block type="tertiary"  :disabled="leavePayDisabled" >
+            关闭交易
+            </NButton>
+          </template>
+          <div>
+            <span >每天仅需{{buying.dayCost}}元,让</span>
+          <span class="font-bold">世界最强</span>
+          <span >人工智成为您的私人助理,您确定要关闭本次交易吗?</span>
+          </div>
+      </NPopconfirm>
+     
     </div>
   </NModal>
 </template>

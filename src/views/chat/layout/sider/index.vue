@@ -6,7 +6,7 @@ import List from './List.vue'
 import Footer from './Footer.vue'
 import { useAppStore, useChatStore } from '@/store'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
-import { PromptStore, QuotaStore } from '@/components/common'
+import { PromptStore, QuotaStore,SpreadStore } from '@/components/common'
 
 const appStore = useAppStore()
 const chatStore = useChatStore()
@@ -14,7 +14,7 @@ const chatStore = useChatStore()
 const { isMobile } = useBasicLayout()
 const show = ref(false)
 const quotaShow = ref(false)
-
+const spreadShow = ref(false)
 const collapsed = computed(() => appStore.siderCollapsed)
 
 function handleAdd() {
@@ -87,6 +87,9 @@ watch(
           <NButton block @click="quotaShow = true">
             额度商店
           </NButton>
+          <!-- <NButton block @click="spreadShow = true">
+            激励计划(1.0)
+          </NButton> -->
         </div>
       </main>
       <Footer />
@@ -97,4 +100,5 @@ watch(
   </template>
   <PromptStore v-model:visible="show" />
   <QuotaStore v-model:visible="quotaShow" />
+  <SpreadStore v-model:visible="spreadShow"/>
 </template>

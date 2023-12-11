@@ -360,7 +360,7 @@ const avatarTextClass = isMobile.value ? 'w-[100px]' : 'flex-shrink-0 w-[100px]'
         </div>
       </div>
       <div class="flex items-center space-x-4">
-        <span class="flex-shrink-0 w-[100px]">{{ $t('setting.resetUserInfo') }}</span>
+        <!-- <span class="flex-shrink-0 w-[100px]">{{ $t('setting.resetUserInfo') }}</span> -->
         <NPopconfirm :on-positive-click="handleLogout" placement="right-end">
           <template #trigger>
             <NButton size="small" type="warning">

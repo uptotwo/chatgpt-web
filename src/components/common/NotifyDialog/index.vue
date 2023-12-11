@@ -74,7 +74,7 @@ const notifyDialogShow
       <div class="normalWord" />
       <span class="enlarged">感谢您的理解,期待您的加入</span>
       <div >
-        <NButton class="normalWord" size="small" type="primary" @click="$emit('child-click')">
+        <NButton class="normalWord"  type="primary" @click="$emit('child-click')">
           我知道了
         </NButton>
       </div>

@@ -16,6 +16,7 @@ import { useChatStore, usePromptStore, useUserStore } from '@/store'
 import { useBasicLayout } from '@/hooks/useBasicLayout'
 import { fetchChatAPIProcess } from '@/api'
 import { t } from '@/locales'
+import { QuotaStore } from '@/components/common'
 
 let controller = new AbortController()
 
@@ -26,6 +27,8 @@ const dialog = useDialog()
 const ms = useMessage()
 
 const chatStore = useChatStore()
+
+const quotaShow = ref(false)
 
 useCopyCode()
 
@@ -126,8 +129,22 @@ async function onConversation() {
             chunk = responseText.substring(lastIndex)
           try {
             const data = JSON.parse(chunk)
-            // debugger
-            // console.log(`-------------------chunk:${chunk}`)
+            console.log(`-------------------chunk:${chunk}`)
+            if( 'NoQuota' === data.status){
+              updateCounts(undefined,0)
+              updateChatSome(
+                +uuid,
+                dataSources.value.length - 1,
+                {
+                  text: `${data.message}`,
+                  error: false,
+                  loading: false,
+                },
+              )
+              quotaShow.value = true
+              ms.warning(data.message,{duration:3000})
+              return
+            }
             updateCounts(data.totalUsed, data.totalQuota)
             updateChat(
               +uuid,
@@ -153,6 +170,7 @@ async function onConversation() {
             scrollToBottomIfAtBottom()
           }
           catch (error) {
+            console.log(error)
             ms.error('数据异常,请稍后重试')
             //
           }
@@ -165,6 +183,9 @@ async function onConversation() {
   }
   catch (error: any) {
     const errorMessage = error?.message ?? t('common.wrong')
+    if(error.status && error.status === 'NoQuota'){
+      return//在try中处理这种情况
+    }
 
     if (error.message === 'canceled') {
       updateChatSome(
@@ -213,9 +234,13 @@ async function onConversation() {
   }
 }
 
-function updateCounts(totalUsed: number, totalQuota: number) {
-  if (totalUsed)
-    userStore.updateUserInfo({ countsUsed: totalUsed, countsQuota: totalQuota })
+function updateCounts(totalUsed?: number, totalQuota?: number) {
+  if (totalUsed){
+    userStore.updateUserInfo({ countsUsed: totalUsed})
+  }
+  if(totalQuota){
+    userStore.updateUserInfo({ countsQuota: totalQuota})
+  }
 }
 
 async function onRegenerate(index: number) {
@@ -266,6 +291,22 @@ async function onRegenerate(index: number) {
             chunk = responseText.substring(lastIndex)
           try {
             const data = JSON.parse(chunk)
+            console.log(`-------------------chunk:${chunk}`)
+            if( 'NoQuota' === data.status){
+              updateCounts(undefined,0)
+              updateChatSome(
+                +uuid,
+                dataSources.value.length - 1,
+                {
+                  text: `${data.message}`,
+                  error: false,
+                  loading: false,
+                },
+              )
+              quotaShow.value = true
+              ms.warning(data.message,{duration:3000})
+              return
+            }
             updateCounts(data.totalUsed, data.totalQuota)
             updateChat(
               +uuid,
@@ -289,6 +330,7 @@ async function onRegenerate(index: number) {
             }
           }
           catch (error) {
+            console.log(error);
             //
           }
         },
@@ -481,19 +523,12 @@ onUnmounted(() => {
 
 <template>
   <div class="flex flex-col w-full h-full">
-    <HeaderComponent
-      v-if="isMobile"
-      :using-context="usingContext"
-      @export="handleExport"
-      @toggle-using-context="toggleUsingContext"
-    />
+    <HeaderComponent v-if="isMobile" :using-context="usingContext" @export="handleExport"
+      @toggle-using-context="toggleUsingContext" />
     <main class="flex-1 overflow-hidden">
       <div id="scrollRef" ref="scrollRef" class="h-full overflow-hidden overflow-y-auto">
-        <div
-          id="image-wrapper"
-          class="w-full max-w-screen-xl m-auto dark:bg-[#101014]"
-          :class="[isMobile ? 'p-2' : 'p-4']"
-        >
+        <div id="image-wrapper" class="w-full max-w-screen-xl m-auto dark:bg-[#101014]"
+          :class="[isMobile ? 'p-2' : 'p-4']">
           <template v-if="!dataSources.length">
             <div class="flex items-center justify-center mt-4 text-center text-neutral-300">
               <SvgIcon icon="ri:bubble-chart-fill" class="mr-2 text-3xl" />
@@ -502,17 +537,9 @@ onUnmounted(() => {
           </template>
           <template v-else>
             <div>
-              <Message
-                v-for="(item, index) of dataSources"
-                :key="index"
-                :date-time="item.dateTime"
-                :text="item.text"
-                :inversion="item.inversion"
-                :error="item.error"
-                :loading="item.loading"
-                @regenerate="onRegenerate(index)"
-                @delete="handleDelete(index)"
-              />
+              <Message v-for="(item, index) of dataSources" :key="index" :date-time="item.dateTime" :text="item.text"
+                :inversion="item.inversion" :error="item.error" :loading="item.loading" @regenerate="onRegenerate(index)"
+                @delete="handleDelete(index)" />
               <div class="sticky bottom-0 left-0 flex justify-center">
                 <NButton v-if="loading" type="warning" @click="handleStop">
                   <template #icon>
@@ -546,17 +573,9 @@ onUnmounted(() => {
           </HoverButton>
           <NAutoComplete v-model:value="prompt" :options="searchOptions" :render-label="renderOption">
             <template #default="{ handleInput, handleBlur, handleFocus }">
-              <NInput
-                ref="inputRef"
-                v-model:value="prompt"
-                type="textarea"
-                :placeholder="placeholder"
-                :autosize="{ minRows: 1, maxRows: isMobile ? 4 : 8 }"
-                @input="handleInput"
-                @focus="handleFocus"
-                @blur="handleBlur"
-                @keypress="handleEnter"
-              />
+              <NInput ref="inputRef" v-model:value="prompt" type="textarea" :placeholder="placeholder"
+                :autosize="{ minRows: 1, maxRows: isMobile ? 4 : 8 }" @input="handleInput" @focus="handleFocus"
+                @blur="handleBlur" @keypress="handleEnter" />
             </template>
           </NAutoComplete>
           <NButton type="primary" :disabled="buttonDisabled" @click="onConversation">
@@ -570,4 +589,5 @@ onUnmounted(() => {
       </div>
     </footer>
   </div>
+  <QuotaStore v-model:visible="quotaShow" />
 </template>
